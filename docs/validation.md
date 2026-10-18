@@ -61,6 +61,17 @@ against build output, developer tools, test installations, logs and credential
 paths. The repository currently has no commits or configured remote, so there is
 no existing Git history to review. No commit or push was performed by these checks.
 
+## Hosted CI follow-up
+
+The first GitHub Actions run compiled on stable Rust, then exposed three test
+fixtures that assumed temporary directories were private. GitHub's Linux runner
+uses different default permissions from the tested Termux environment. Installation
+test directories now explicitly request mode 0700. An additional regression checks
+that a nonprivate managed directory is still rejected; production checks were not
+relaxed. Local validation after this correction passed 40 offline Rust tests and
+Clippy. The workflow runs both Rust versions to completion independently so one
+failure does not cancel the other version's results.
+
 ## Doctor and setup validation
 
 Both commands were implemented and tested in the repository without replacing the

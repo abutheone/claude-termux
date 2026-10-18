@@ -472,9 +472,18 @@ pub fn uninstall(root: &Path) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // tempfile uses the process umask by default; managed roots must be private
+    // even on hosts whose default umask permits group or other access.
+    fn private_test_directory() -> Result<tempfile::TempDir> {
+        Ok(tempfile::Builder::new()
+            .permissions(fs::Permissions::from_mode(0o700))
+            .tempdir()?)
+    }
+
     #[test]
     fn refuses_adopting_nonempty_directories() -> Result<()> {
-        let root = tempfile::tempdir()?;
+        let root = private_test_directory()?;
         fs::write(root.path().join("personal.txt"), "keep me")?;
         assert!(initialize(root.path()).is_err());
         assert!(root.path().join("personal.txt").exists());
@@ -482,7 +491,7 @@ mod tests {
     }
     #[test]
     fn uninstall_preserves_unrecognized_user_files() -> Result<()> {
-        let root = tempfile::tempdir()?;
+        let root = private_test_directory()?;
         initialize(root.path())?;
         fs::write(root.path().join("personal.txt"), "keep me")?;
         assert!(uninstall(root.path()).is_err());
@@ -491,15 +500,24 @@ mod tests {
     }
     #[test]
     fn shared_session_lock_blocks_mutation() -> Result<()> {
-        let root = tempfile::tempdir()?;
+        let root = private_test_directory()?;
         initialize(root.path())?;
         let _session = lock(root.path(), false)?;
         assert!(lock(root.path(), true).is_err());
         Ok(())
     }
     #[test]
+    fn refuses_nonprivate_managed_directory() -> Result<()> {
+        let root = private_test_directory()?;
+        initialize(root.path())?;
+        fs::set_permissions(root.path(), fs::Permissions::from_mode(0o755))?;
+        assert!(initialize(root.path()).is_err());
+        assert!(inspect_state_readonly(root.path()).is_err());
+        Ok(())
+    }
+    #[test]
     fn refuses_symlink_roots() -> Result<()> {
-        let directory = tempfile::tempdir()?;
+        let directory = private_test_directory()?;
         let real = directory.path().join("real");
         fs::create_dir(&real)?;
         let link = directory.path().join("link");
@@ -509,7 +527,7 @@ mod tests {
     }
     #[test]
     fn readonly_inspection_never_creates_a_root_or_lock() -> Result<()> {
-        let temporary = tempfile::tempdir()?;
+        let temporary = private_test_directory()?;
         let missing = temporary.path().join("absent");
         assert!(matches!(
             inspect_state_readonly(&missing)?,
@@ -529,7 +547,7 @@ mod tests {
 
     #[test]
     fn readonly_inspection_preserves_corrupt_state_and_reports_busy_installer() -> Result<()> {
-        let temporary = tempfile::tempdir()?;
+        let temporary = private_test_directory()?;
         let root = temporary.path();
         initialize(root)?;
         let writer = lock(root, true)?;
@@ -546,7 +564,7 @@ mod tests {
 
     #[test]
     fn readonly_inspection_rejects_special_files_without_opening_them() -> Result<()> {
-        let temporary = tempfile::tempdir()?;
+        let temporary = private_test_directory()?;
         nix::unistd::mkfifo(
             &temporary.path().join(".owner"),
             nix::sys::stat::Mode::S_IRUSR | nix::sys::stat::Mode::S_IWUSR,
