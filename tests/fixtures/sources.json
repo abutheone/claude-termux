@@ -1,0 +1,14 @@
+{
+  "npm-2.1.302.json": {
+    "url": "https://registry.npmjs.org/@anthropic-ai/claude-code-linux-arm64-musl/2.1.302",
+    "sha256": "4a556d846c804146b862eb707da177933a7679401ef20ddcbd224e36869d5bb6"
+  },
+  "musl-1.2.6-r2.apk": {
+    "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/musl-1.2.6-r2.apk",
+    "sha256": "5e9674b7f41152fe2119093b5cb4c13eaaadb19c2d5422b2d7267913e663ee6e"
+  },
+  "MUSL-COPYRIGHT": {
+    "url": "https://git.musl-libc.org/cgit/musl/plain/COPYRIGHT?h=v1.2.6",
+    "sha256": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+  }
+}
