@@ -193,19 +193,35 @@ fn verify_release(root: &Path, version: &str) -> Result<Manifest> {
     );
     let binary = release.join("claude");
     let loader = release.join("loader");
-    for path in [&binary, &loader, &release.join("claude.original")] {
+    let original = release.join("claude.original");
+    for path in [&binary, &loader, &original] {
         regular_file(path)?;
     }
+    let (binary_hash, loader_hash, original_hash) = std::thread::scope(|s| {
+        let h1 = s.spawn(|| artifacts::sha256_file(&binary));
+        let h2 = s.spawn(|| artifacts::sha256_file(&loader));
+        let h3 = s.spawn(|| artifacts::sha256_file(&original));
+        let r1 = h1
+            .join()
+            .map_err(|_| anyhow::anyhow!("integrity check thread panicked"))?;
+        let r2 = h2
+            .join()
+            .map_err(|_| anyhow::anyhow!("integrity check thread panicked"))?;
+        let r3 = h3
+            .join()
+            .map_err(|_| anyhow::anyhow!("integrity check thread panicked"))?;
+        Ok::<_, anyhow::Error>((r1?, r2?, r3?))
+    })?;
     ensure!(
-        artifacts::sha256_file(&binary)? == manifest.binary_sha256,
+        binary_hash == manifest.binary_sha256,
         "installed Claude binary changed"
     );
     ensure!(
-        artifacts::sha256_file(&loader)? == manifest.loader_sha256,
+        loader_hash == manifest.loader_sha256,
         "installed musl loader changed"
     );
     ensure!(
-        artifacts::sha256_file(&release.join("claude.original"))? == manifest.original_sha256,
+        original_hash == manifest.original_sha256,
         "original Claude binary changed"
     );
     let absolute_loader = fs::canonicalize(&loader)?;
@@ -213,7 +229,7 @@ fn verify_release(root: &Path, version: &str) -> Result<Manifest> {
         .to_str()
         .context("loader path is not UTF-8")?;
     ensure!(
-        elf::inspect(&binary)?.interpreter.as_deref() == Some(expected),
+        elf::read_interpreter(&binary)?.as_deref() == Some(expected),
         "patched interpreter mismatch"
     );
     Ok(manifest)
