@@ -9,11 +9,14 @@ main() (
     revision=4e63549a82255f3a094ce050d692e9204fdf8526
 
     fail() { printf 'Installation stopped: %s\n' "$*" >&2; exit 1; }
-    [ "$(uname -o)" = Android ] && [ "$(uname -m)" = aarch64 ] ||
+    if [ "$(uname -o)" != Android ] || [ "$(uname -m)" != aarch64 ]; then
         fail 'This installer needs ARM64 Android with Termux.'
+    fi
     [ "${PREFIX:-}" = /data/data/com.termux/files/usr ] ||
         fail 'Use the standard com.termux installation.'
-    [ -n "${HOME:-}" ] && [ -d "$HOME" ] || fail 'HOME must be an existing directory.'
+    if [ -z "${HOME:-}" ] || [ ! -d "$HOME" ]; then
+        fail 'HOME must be an existing directory.'
+    fi
     case "$HOME" in /*) ;; *) fail 'HOME must be an absolute path.' ;; esac
     command -v pkg >/dev/null 2>&1 || fail 'The Termux pkg command is missing.'
 
@@ -39,13 +42,7 @@ main() (
     lock=$state/install.lock
     mkdir "$lock" 2>/dev/null || fail "Another installer may be running. If it was interrupted, remove $lock and retry."
     work=
-    link=
-    cleanup() {
-        [ -z "$link" ] || rm -f -- "$link"
-        [ -z "$work" ] || rm -rf -- "$work"
-        rmdir "$lock"
-    }
-    trap cleanup EXIT
+    trap 'if [ -n "$work" ]; then rm -rf -- "$work"; fi; rmdir "$lock"' EXIT
     trap 'exit 130' INT
     trap 'exit 143' TERM HUP
     work=$(mktemp -d "$state/build.XXXXXXXX")
@@ -65,7 +62,9 @@ main() (
         CARGO_TARGET_DIR="$work/source/target" OPENSSL_DIR="$PREFIX" cargo build --release --locked
     )
     candidate=$work/source/target/release/claude-termux
-    [ -f "$candidate" ] && [ ! -L "$candidate" ] && [ -x "$candidate" ] || fail 'The build did not produce a launcher.'
+    if [ ! -f "$candidate" ] || [ -L "$candidate" ] || [ ! -x "$candidate" ]; then
+        fail 'The build did not produce a launcher.'
+    fi
     printf '\nChecking your phone and setting up Claude Code…\n'
     "$candidate" doctor
     "$candidate" setup
@@ -76,7 +75,6 @@ main() (
     link=$work/claude-termux
     ln -s "$release/claude-termux" "$link"
     mv -Tf "$link" "$destination"
-    link=
     printf '\nReady. Start Claude Code with:\n  "%s" run\n' "$destination"
     printf 'No shell settings or existing claude command were changed.\n'
 )
