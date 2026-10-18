@@ -8,7 +8,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parent.parent
 INSTALLER = ROOT / "install.sh"
-REVISION = re.search(r"revision=([0-9a-f]{40})", INSTALLER.read_text())[1]
+REVISION = re.search(r"fallback_revision=([0-9a-f]{40})", INSTALLER.read_text())[1]
 
 
 class InstallerTests(unittest.TestCase):
@@ -25,13 +25,26 @@ class InstallerTests(unittest.TestCase):
                         PREFIX="/data/data/com.termux/files/usr",
                         PATH=f"{self.bin}:{os.environ['PATH']}",
                         TEST_LOG=str(self.log), TEST_REVISION=REVISION,
-                        TEST_ARCH="aarch64", TEST_BUILD_FAIL="0", TEST_SETUP_FAIL="0")
+                        TEST_ARCH="aarch64", TEST_BUILD_FAIL="0", TEST_SETUP_FAIL="0",
+                        TEST_HTTP_CODE="404", TEST_TAG="v0.1.0",
+                        TEST_RELEASE_REVISION="1" * 40)
         self.tool("uname", 'case "$1" in -o) echo Android ;; -m) echo "$TEST_ARCH" ;; esac')
         self.tool("pkg", 'echo pkg >> "$TEST_LOG"')
+        self.tool("curl", '''
+            echo curl >> "$TEST_LOG"
+            printf '{\"tag_name\":\"%s\"}\n' "$TEST_TAG" > "$3"
+            printf '%s' "$TEST_HTTP_CODE"
+        ''')
+        self.tool("jq", '''
+            echo jq >> "$TEST_LOG"
+            printf '%s\n' "$TEST_TAG"
+        ''')
         self.tool("git", '''
-            echo git >> "$TEST_LOG"
+            echo "git $*" >> "$TEST_LOG"
             if [ "$1" = init ]; then mkdir -p "$3"; fi
-            if [ "${3:-}" = rev-parse ]; then echo "$TEST_REVISION"; fi
+            if [ "${3:-}" = rev-parse ]; then
+                if [ "$TEST_HTTP_CODE" = 200 ]; then echo "$TEST_RELEASE_REVISION"; else echo "$TEST_REVISION"; fi
+            fi
         ''')
         self.tool("cargo", '''
             echo cargo >> "$TEST_LOG"
@@ -74,7 +87,7 @@ LAUNCHER
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue(self.destination.is_symlink())
             self.assertTrue(os.access(self.destination, os.X_OK))
-            self.assertIn(str(self.destination), result.stdout)
+            self.assertTrue("already installed" in result.stdout or str(self.destination) in result.stdout)
             self.assert_clean()
         self.assertEqual(credentials.read_text(), "fixture, not a token")
         self.assertEqual(shell.read_text(), "# personal settings\n")
@@ -83,6 +96,7 @@ LAUNCHER
     def test_failed_build_or_setup_preserves_installed_launcher(self):
         self.assertEqual(self.run_installer().returncode, 0)
         previous = self.destination.readlink()
+        self.env["TEST_HTTP_CODE"] = "200"
         for failure in ("TEST_BUILD_FAIL", "TEST_SETUP_FAIL"):
             self.env[failure] = "1"
             self.assertNotEqual(self.run_installer().returncode, 0)
@@ -90,12 +104,45 @@ LAUNCHER
             self.assert_clean()
             self.env[failure] = "0"
 
-    def test_existing_command_is_not_overwritten(self):
+    def test_existing_non_executable_file_is_not_overwritten(self):
         self.destination.parent.mkdir(parents=True)
-        self.destination.write_text("personal command")
+        self.destination.write_text("personal file")
         self.assertNotEqual(self.run_installer().returncode, 0)
-        self.assertEqual(self.destination.read_text(), "personal command")
+        self.assertEqual(self.destination.read_text(), "personal file")
         self.assertFalse(self.log.exists())
+
+    def test_legacy_launcher_is_backed_up_before_replacement(self):
+        self.destination.parent.mkdir(parents=True)
+        self.destination.write_text("#!/bin/sh\necho previous launcher\n")
+        self.destination.chmod(0o700)
+        self.env["TEST_HTTP_CODE"] = "200"
+        result = self.run_installer()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(self.destination.is_symlink())
+        backups = list((self.home / ".local/share/claude-termux-launcher/backups").glob("claude-termux.*/claude-termux"))
+        self.assertEqual(len(backups), 1)
+        self.assertEqual(backups[0].read_text(), "#!/bin/sh\necho previous launcher\n")
+        self.assertIn("Previous launcher backup:", result.stdout)
+
+    def test_failed_setup_keeps_legacy_launcher_and_removes_temporary_backup(self):
+        self.destination.parent.mkdir(parents=True)
+        original = "#!/bin/sh\necho old\n"
+        self.destination.write_text(original)
+        self.destination.chmod(0o700)
+        self.env["TEST_HTTP_CODE"] = "200"
+        self.env["TEST_SETUP_FAIL"] = "1"
+        result = self.run_installer()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.destination.read_text(), original)
+        state = self.home / ".local/share/claude-termux-launcher"
+        self.assertEqual(list((state / "backups").iterdir()), [])
+        self.assert_clean()
+
+    def test_release_discovery_uses_latest_release_tag(self):
+        self.env["TEST_HTTP_CODE"] = "200"
+        result = self.run_installer()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("refs/tags/v0.1.0", self.log.read_text())
 
     def test_unrelated_symlink_is_not_overwritten(self):
         self.destination.parent.mkdir(parents=True)

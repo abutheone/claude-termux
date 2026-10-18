@@ -17,10 +17,11 @@ sh install.sh
 ```
 
 The bootstrap checks standard ARM64 Termux before changing files. It installs
-Termux build dependencies with pkg, fetches an exact reviewed Git commit, verifies
-the fetched commit ID, builds with Cargo.lock, and calls the Rust doctor and setup
-commands. Cargo downloads build dependencies; this is not an offline installation.
-The existing Rust installer verifies Claude and the loader before activation.
+Termux build dependencies with pkg and checks GitHub for the latest stable release.
+It builds that release tag with Cargo.lock, then calls the Rust doctor and setup
+commands. Until the first release exists, it uses a reviewed, fixed source commit.
+Cargo downloads build dependencies; this is not an offline installation. The Rust
+setup verifies Claude and the loader before activation.
 
 The launcher is linked at `~/.local/bin/claude-termux`. Builds are kept under
 `~/.local/share/claude-termux-launcher/releases`. Setup keeps Claude releases and
@@ -28,15 +29,20 @@ login settings in their usual separate locations. To enable zsh tab completion,
 run the one-line setup in [command setup](command-setup.md).
 
 The installer leaves shell startup files and any existing `claude` command alone.
-It stops if `~/.local/bin/claude-termux` already belongs to something else.
+If `~/.local/bin/claude-termux` is an executable from an older manual install, the
+installer copies it to a dated folder under
+`~/.local/share/claude-termux-launcher/backups/`, verifies the copy, then switches
+to the new launcher. Other conflicting files and unrelated symlinks are left alone.
 
-Rerunning rebuilds the pinned launcher and reuses a healthy Claude installation.
-The shortcut changes only after doctor and setup succeed. A failed launcher build
-or setup leaves the previous shortcut intact. An interrupted operation may leave
-an unlinked launcher build; older builds are not automatically removed. The lock
-is a directory: after a forced kill, ensure no installer is running before removing
-~/.local/share/claude-termux-launcher/install.lock and retrying. Never remove a live
-lock. Removing the launcher does not remove the build dependencies or login settings.
+Run the same curl line again to check for a newer stable GitHub release. If the
+installed launcher is already current, it skips rebuilding and checks doctor/setup.
+When a newer release is found, the installer builds and checks it before switching.
+Older managed builds stay under `releases/` for recovery. A failed build or setup
+leaves the previous shortcut active. An interrupted operation may leave an unlinked
+launcher build; older builds are not automatically removed. The lock is a directory:
+after a forced kill, ensure no installer is running before removing
+`~/.local/share/claude-termux-launcher/install.lock` and retrying. Never remove a live
+lock. Removing the launcher does not remove build dependencies or login settings.
 
 Allow about 2 GB of free space for the build and initial installation; actual use
 varies with the Rust toolchain and artifacts. The Rust setup command separately
@@ -69,7 +75,10 @@ the launcher shortcut. Do not duplicate Claude downloads, signature checks, acco
 handling, or platform compatibility logic from Rust setup. Change its pinned source
 revision only to a reviewed commit whose Rust CI passes on both supported toolchains.
 The bootstrap script itself is fetched from main, so review and test its changes
-before recommending them. It does not silently discover newer Claude versions.
+before recommending them. GitHub Releases are created by the repository workflow
+only after both Rust toolchains pass CI; tags must match the Cargo package version.
+The installer discovers the latest stable release, but does not update Claude Code
+or silently trust arbitrary commits from `main`.
 
 Before publishing installer changes, use [the standard project checks](publication.md).
 The installer tests use fake package, Git and Cargo commands in temporary homes.

@@ -41,7 +41,9 @@ Rust version. Check the [Actions results](https://github.com/abutheone/claude-te
 after pushing. A local pass does not mean hosted checks passed.
 
 The package is source code shared on GitHub. `publish = false` only prevents
-publishing this crate to crates.io. Releases, Claude updates, and GitHub pushes are
-separate actions. Do not place credentials in source files, commit messages, or Git
-remote URLs. Python checks require Python 3.11 or later; install ShellCheck if it is
-not available on your system.
+publishing this crate to crates.io. To publish a launcher release, first merge and
+push the reviewed change, then push a `vX.Y.Z` tag matching `Cargo.toml`. The same
+workflow runs both Rust toolchains and creates the GitHub Release only when all
+checks pass. The installer discovers these stable releases on its next run. Do not
+place credentials in source files, commit messages, or Git remote URLs. Python
+checks require Python 3.11 or later; install ShellCheck if it is not available.

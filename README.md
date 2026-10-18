@@ -16,6 +16,7 @@ curl -fsSL https://raw.githubusercontent.com/abutheone/claude-termux/main/instal
 ```
 
 Read [what the installer does](docs/installation.md) before running it if you prefer.
+Run the same line again later to check for and install the latest stable launcher release.
 
 ## Start Claude
 
