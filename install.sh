@@ -53,6 +53,8 @@ main() (
     link=
     backup_directory=
     published=0
+    # The shell invokes this function indirectly through the EXIT trap.
+    # shellcheck disable=SC2317
     cleanup() {
         if [ -n "$link" ]; then rm -f -- "$link"; fi
         if [ -n "$work" ]; then rm -rf -- "$work"; fi
