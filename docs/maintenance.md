@@ -4,7 +4,7 @@
 
 Keep changes focused on one module boundary. Include tests for failures as well as
 successes when touching signatures, paths, parsing, activation or cleanup. Run the
-format, Clippy, offline Rust/Python tests, publication scan and OSV commands from the README. Review Cargo.lock
+format, Clippy, offline Rust/Python tests, publication scan and OSV commands in this guide. Review Cargo.lock
 changes instead of accepting a dependency update as incidental formatting.
 
 Dependencies use compatible Cargo version ranges and a committed lockfile.
@@ -71,3 +71,19 @@ default and allow explicit version selection. Test dry runs, insufficient storag
 missing dependencies, unmanaged/corrupt directories, repeated setup and failure
 recovery. Tests must not use the operator's real credential directory or infer that
 a successful Rust HTTPS probe proves all Claude features work.
+
+## Development checks
+
+```sh
+cargo fmt --all -- --check
+OPENSSL_DIR="$PREFIX" cargo clippy --locked --all-targets -- -D warnings
+OPENSSL_DIR="$PREFIX" cargo test --locked
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 scripts/check-publish.py
+python3 scripts/check-dependencies.py
+sh -n install.sh
+shellcheck install.sh
+```
+
+Python checks require Python 3.11 or later. See [installation](installation.md)
+for bootstrap maintenance and manual installation.

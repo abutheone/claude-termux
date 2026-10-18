@@ -18,11 +18,12 @@ jobs:
       - name: Install native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y pkg-config libssl-dev
+          sudo apt-get install --no-install-recommends -y pkg-config libssl-dev shellcheck
       - name: Prepare Rust
         run: |
           rustup toolchain install "${{ matrix.toolchain }}" --profile minimal --component clippy,rustfmt
           rustup default "${{ matrix.toolchain }}"
+      - run: sh -n install.sh && shellcheck install.sh
       - run: python3 -m unittest discover -s tests -p 'test_*.py'
       - run: python3 scripts/check-publish.py
       - run: cargo fmt --all -- --check
