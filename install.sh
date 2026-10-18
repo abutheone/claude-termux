@@ -6,7 +6,7 @@ main() (
     umask 077
     repository=https://github.com/abutheone/claude-termux.git
     # Change only after this revision's Rust checks pass on both CI toolchains.
-    revision=4e63549a82255f3a094ce050d692e9204fdf8526
+    revision=66a0f39af020a2a6010e6de38534b93e2db6fd9c
 
     fail() { printf 'Installation stopped: %s\n' "$*" >&2; exit 1; }
     if [ "$(uname -o)" != Android ] || [ "$(uname -m)" != aarch64 ]; then
