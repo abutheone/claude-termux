@@ -18,7 +18,7 @@ jobs:
       - name: Install native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y pkg-config libssl-dev shellcheck
+          sudo apt-get install --no-install-recommends -y pkg-config libssl-dev shellcheck jq
       - name: Prepare Rust
         run: |
           rustup toolchain install "${{ matrix.toolchain }}" --profile minimal --component clippy,rustfmt

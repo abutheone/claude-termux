@@ -74,7 +74,7 @@ main() (
         fail 'Could not check GitHub releases. Check your connection and retry.'
     case "$response_code" in
         200)
-            tag=$(jq -er '.tag_name | select(test("^v[0-9]+\.[0-9]+\.[0-9]+$"))' "$work/release.json") ||
+            tag=$(jq -er '.tag_name | select(test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))' "$work/release.json") ||
                 fail 'The latest GitHub release has an invalid version tag.'
             source_ref="refs/tags/$tag"
             ;;

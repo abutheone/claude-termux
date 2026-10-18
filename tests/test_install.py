@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -75,6 +76,21 @@ LAUNCHER
         state = self.home / ".local/share/claude-termux-launcher"
         self.assertFalse((state / "install.lock").exists())
         self.assertEqual(list(state.glob("build.*")), [])
+
+    def test_release_tag_filter_accepts_versions_and_rejects_other_values(self):
+        jq = shutil.which("jq")
+        if jq is None:
+            self.skipTest("jq is required to exercise the installer's release filter")
+        expression = re.search(r"jq -er '([^']+)'", INSTALLER.read_text())[1]
+        valid = subprocess.run([jq, "-er", expression, "-"],
+                               input='{"tag_name":"v0.1.1"}', text=True,
+                               capture_output=True, check=False)
+        self.assertEqual(valid.returncode, 0, valid.stderr)
+        self.assertEqual(valid.stdout.strip(), "v0.1.1")
+        invalid = subprocess.run([jq, "-er", expression, "-"],
+                                 input='{"tag_name":"latest"}', text=True,
+                                 capture_output=True, check=False)
+        self.assertNotEqual(invalid.returncode, 0)
 
     def test_success_and_rerun_preserve_user_files(self):
         credentials = self.home / ".config/claude-termux/claude/credentials"
