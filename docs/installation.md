@@ -22,11 +22,13 @@ the fetched commit ID, builds with Cargo.lock, and calls the Rust doctor and set
 commands. Cargo downloads build dependencies; this is not an offline installation.
 The existing Rust installer verifies Claude and the loader before activation.
 
-The launcher is linked at ~/.local/bin/claude-termux. Builds are kept under
-~/.local/share/claude-termux-launcher/releases. Setup keeps Claude releases and
-login settings in their usual separate locations. No shell startup file or existing
-claude command is changed. An unrelated existing claude-termux command is refused,
-including copies installed manually; move it yourself only after reviewing it.
+The launcher is linked at `~/.local/bin/claude-termux`. Builds are kept under
+`~/.local/share/claude-termux-launcher/releases`. Setup keeps Claude releases and
+login settings in their usual separate locations. To enable zsh tab completion,
+run the one-line setup in [command setup](command-setup.md).
+
+The installer leaves shell startup files and any existing `claude` command alone.
+It stops if `~/.local/bin/claude-termux` already belongs to something else.
 
 Rerunning rebuilds the pinned launcher and reuses a healthy Claude installation.
 The shortcut changes only after doctor and setup succeed. A failed launcher build
@@ -69,8 +71,7 @@ revision only to a reviewed commit whose Rust CI passes on both supported toolch
 The bootstrap script itself is fetched from main, so review and test its changes
 before recommending them. It does not silently discover newer Claude versions.
 
-Run sh -n install.sh, ShellCheck, and the Python installer tests before publishing.
-The Python tests use fake package, Git and Cargo commands in isolated temporary
-homes. They cover reruns, paths containing spaces, failures preserving the previous
-launcher, conflicting commands, unsupported platforms, and source revision mismatch.
-They do not establish real package installation or fresh-phone build behavior.
+Before publishing installer changes, use [the standard project checks](publication.md).
+The installer tests use fake package, Git and Cargo commands in temporary homes.
+They check reruns, paths with spaces, safe failure behavior, conflicts, and
+unsupported platforms. They do not prove a fresh phone can build successfully.

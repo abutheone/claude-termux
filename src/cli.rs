@@ -54,6 +54,12 @@ pub enum Command {
     },
     /// Activate the previous verified release.
     Rollback,
+    /// Generate up-to-date completions for a shell.
+    Completions {
+        /// Shell that should receive completions.
+        #[arg(value_enum)]
+        shell: clap_complete::Shell,
+    },
     /// Remove this tool's managed installation, preserving Claude credentials.
     Uninstall,
 }

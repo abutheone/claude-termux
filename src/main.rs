@@ -1,5 +1,6 @@
 use anyhow::Result;
-use clap::Parser;
+use clap::{CommandFactory, Parser};
+use clap_complete::generate;
 use claude_termux::{
     cli::{Cli, Command},
     doctor, installation, launcher, setup,
@@ -60,6 +61,14 @@ async fn execute() -> Result<()> {
             std::process::exit(status);
         }
         Command::Rollback => installation::rollback(&root)?,
+        Command::Completions { shell } => {
+            generate(
+                shell,
+                &mut Cli::command(),
+                "claude-termux",
+                &mut std::io::stdout(),
+            );
+        }
         Command::Uninstall => installation::uninstall(&root)?,
     }
     Ok(())

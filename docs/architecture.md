@@ -7,7 +7,7 @@ can evolve without rewriting the CLI.
 
 ```text
 src/
-  cli.rs                 Command-line interface only
+  cli.rs                 Commands, flags, and completion source
   setup.rs               Read-only preflight plus the existing installer
   doctor/
     mod.rs               Shared diagnostic report and opt-in orchestration

@@ -12,6 +12,7 @@ publish = false
 anyhow = "1"
 base64 = "0.22"
 clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
 flate2 = "1"
 fs2 = "0.4"
 goblin = "0.10"

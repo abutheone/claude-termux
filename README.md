@@ -1,48 +1,43 @@
 # claude-termux
 
-Run Claude Code in Termux on your Android phone, without root or a separate Linux environment.
+Run Claude Code on ARM64 Android in Termux. This community project helps the
+official Claude Code program run there; Anthropic does not make this project.
 
-This community project helps Anthropic's official Claude Code run on Termux. It is not made by Anthropic.
-
-**Experimental:** tested on one ARM64 Android device. Other phones may need fixes. Keep Termux open while using it; background use is not supported yet.
+**Experimental:** tested on one phone. Background use is not supported. Claude
+can access files and commands available to Termux, so review its permission prompts.
 
 ## Install
 
-You need Termux on an ARM64 Android phone, internet access, and about 2 GB of free space for building and setup. Claude Code requires an Anthropic login; this project does not include a subscription or API credits.
-
-Paste this single line into Termux:
+In Termux, paste this line. It builds the launcher and sets up Claude Code; allow
+about 2 GB of free space and several minutes.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/abutheone/claude-termux/main/install.sh | sh
 ```
 
-The installer adds the build tools, builds the launcher, and sets up Claude Code. This can take several minutes. It runs code from this repository; you can [read the installer](install.sh) first. If Termux says `curl` is missing, run `pkg install curl` and retry.
+Read [what the installer does](docs/installation.md) before running it if you prefer.
 
-## Start Claude Code
+## Start Claude
 
 ```sh
 ~/.local/bin/claude-termux run
 ```
 
-Follow the login instructions. If the browser does not open, copy the displayed link into your browser. Keep Termux open while using Claude.
+Follow its browser sign-in instructions. You need your own Anthropic account.
 
-Want to build it yourself? See [manual installation](docs/installation.md). Want a shorter `claude` command? See [command setup](docs/command-setup.md).
+Run it again from any Termux folder with the same command. The installer leaves
+an existing npm `claude` command alone. For zsh tab completion, manual setup, or help,
+use the [project guide](docs/README.md).
 
-## Good to know
+## Project files
 
-- Claude can read and change files available to Termux. Review permission requests carefully.
-- Setup keeps your existing npm installation and shell settings as they are.
-- Claude updates are managed through this launcher. New versions may need compatibility fixes.
-- Some websites and connected tools need extra network settings. See [network access](docs/security.md).
-
-## Need help?
-
-Run this to check your setup and connection:
-
-```sh
-~/.local/bin/claude-termux doctor --network
+```text
+install.sh   One-line installer
+src/         Rust application
+trust/       Public signing keys
+tests/       Automated checks and fixtures
+docs/        User guides, security notes, and maintenance
 ```
 
-Read the [setup guide](docs/onboarding.md), [test results](docs/validation.md), or [report a problem](https://github.com/abutheone/claude-termux/issues). Never share passwords, login codes, or API keys in an issue.
-
-For contributors: [how it works](docs/architecture.md) · [security](docs/security.md) · [maintenance](docs/maintenance.md) · [publication checks](docs/publication.md).
+Report issues at [GitHub](https://github.com/abutheone/claude-termux/issues). Never
+include passwords, login codes, or API keys.

@@ -2,10 +2,10 @@
 
 ## Routine changes
 
-Keep changes focused on one module boundary. Include tests for failures as well as
-successes when touching signatures, paths, parsing, activation or cleanup. Run the
-format, Clippy, offline Rust/Python tests, publication scan and OSV commands in this guide. Review Cargo.lock
-changes instead of accepting a dependency update as incidental formatting.
+Keep changes focused on one module boundary. Check failures as well as successes
+when changing signatures, paths, parsing, activation or cleanup. Run the checks at
+the end of this guide. Review Cargo.lock changes instead of accepting dependencies
+as incidental formatting.
 
 Dependencies use compatible Cargo version ranges and a committed lockfile.
 Application builds use --locked. Update dependencies deliberately with cargo update,
@@ -62,28 +62,14 @@ foreground restriction.
 
 ## Doctor and setup changes
 
-Keep local diagnostics read-only: no directory creation, lock creation, dependency
-execution, credential reads, or automatic repairs. Use inspect_state_readonly rather
-than the mutating install/run lock helper. Network diagnostics remain explicit,
-credential-free and bounded. Setup must call the existing verified installer; do
-not introduce a parallel download/patch path. Retain healthy installed versions by
-default and allow explicit version selection. Test dry runs, insufficient storage,
-missing dependencies, unmanaged/corrupt directories, repeated setup and failure
-recovery. Tests must not use the operator's real credential directory or infer that
-a successful Rust HTTPS probe proves all Claude features work.
+Keep local diagnostics read-only. Network diagnostics remain explicit,
+credential-free and bounded. Setup must reuse the existing verified installer;
+do not add a second download or patch path. Retain healthy versions by default.
+Keep shell completion generated from the CLI so it follows command changes.
 
 ## Development checks
 
-```sh
-cargo fmt --all -- --check
-OPENSSL_DIR="$PREFIX" cargo clippy --locked --all-targets -- -D warnings
-OPENSSL_DIR="$PREFIX" cargo test --locked
-python3 -m unittest discover -s tests -p 'test_*.py'
-python3 scripts/check-publish.py
-python3 scripts/check-dependencies.py
-sh -n install.sh
-shellcheck install.sh
-```
-
-Python checks require Python 3.11 or later. See [installation](installation.md)
-for bootstrap maintenance and manual installation.
+Use the standard [publication checks](publication.md) before sharing changes.
+After changing CLI arguments, load completion in an interactive zsh and check the
+suggestions. Keep project trees and command examples in sync with the actual files.
+See [installation](installation.md) for the bootstrap and manual build.

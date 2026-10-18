@@ -34,8 +34,8 @@ an official signed package and altered metadata/payloads.
 
 ## Explicit limits
 
-* Working Claude Linux sandbox isolation has not been demonstrated in this project. Run with ordinary
-  permission prompts; never assume filesystem isolation.
+* Working Claude Linux sandbox isolation has not been demonstrated. Run with
+  ordinary permission prompts; never assume filesystem isolation.
 * Other processes with the Termux UID can read or modify this tool and its files.
   Hash manifests detect accidental change; a same-UID attacker can change both
   binary and manifest. File modes do not isolate processes within Termux.
@@ -47,9 +47,9 @@ an official signed package and altered metadata/payloads.
 * Termux's bionic preload cannot be loaded into musl. Removing it can break scripts
   with foreign shebangs such as /usr/bin/env. Full subprocess compatibility is
   not established by a version check.
-* Login, refresh, streaming, remote/local MCP, and background work require separate
-  device tests; the validation record distinguishes local checks from user reports. A successful curl or Rust HTTP request does not prove Claude uses
-  the same path for every feature.
+* Login refresh, streaming, MCP and background work require separate device tests.
+  The validation record separates local checks from user reports. A successful
+  Rust HTTP request does not prove Claude uses the same path for every feature.
 * Android can kill the launcher or descendants unexpectedly. SIGKILL cannot run
   cleanup handlers; orphaned child processes and unfinished work remain possible.
 * The foreground wrapper blocks obvious background CLI entry points but cannot
